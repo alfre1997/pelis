@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Stream Finder</title>
+    <style>
+        :root { --primary: #e74c3c; --dark: #121212; --card: #1e1e1e; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--dark); color: white; margin: 0; padding: 20px; }
+        .nav { position: sticky; top: 0; display: flex; justify-content: space-between; background: var(--card); padding: 15px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        input { flex: 1; margin-right: 10px; padding: 10px; border-radius: 5px; border: 1px solid #444; background: #000; color: #00ff00; }
+        button { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        button:hover { opacity: 0.8; }
+        #results { margin-top: 20px; display: grid; gap: 10px; }
+        .stream-card { background: var(--card); padding: 15px; border-left: 5px solid var(--primary); border-radius: 5px; animation: fadeIn 0.5s; }
+        .stream-card a { color: #3498db; text-decoration: none; font-size: 0.9em; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <div class="nav">
+        <input type="text" id="targetUrl" placeholder="Pega el link de la película aquí...">
+        <button onclick="startExtraction()">EXTRAER VIDEO</button>
+    </div>
+
+    <div id="results">
+        </div>
+
+    <script>
+        async function startExtraction() {
+            const url = document.getElementById('targetUrl').value;
+            const resultsDiv = document.getElementById('results');
+            
+            if(!url) return alert("Escribe una URL primero");
+
+            resultsDiv.innerHTML = "<p>Analizando página (esto puede tardar por el Proxy)...</p>";
+
+            try {
+                // Usamos un proxy para saltar CORS (Este es un ejemplo, podrías necesitar uno propio)
+                const proxyUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(url);
+                const response = await fetch(proxyUrl);
+                const data = await response.json();
+                const htmlString = data.contents;
+
+                // Crear un documento virtual para parsear el HTML
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(htmlString, 'text/html');
+                
+                let foundAny = false;
+                resultsDiv.innerHTML = "";
+
+                // BUSCADOR LÓGICO: Buscamos Iframes y Sources
+                const selectors = ['iframe', 'source', 'video', 'a[href*="embed"]', 'a[href*="player"]'];
+                
+                selectors.forEach(selector => {
+                    const elements = doc.querySelectorAll(selector);
+                    elements.forEach(el => {
+                        const link = el.src || el.href;
+                        if(link && (link.startsWith('http') || link.includes('m3u8'))) {
+                            addResult(link, selector);
+                            foundAny = true;
+                        }
+                    });
+                });
+
+                if(!foundAny) {
+                    resultsDiv.innerHTML = "<p>No se detectaron links directos. Intenta con el método de inspección manual.</p>";
+                }
+
+            } catch (error) {
+                resultsDiv.innerHTML = "<p style='color:red;'>Error: El sitio de pelis bloqueó la conexión automática.</p>";
+            }
+        }
+
+        function addResult(link, type) {
+            const resultsDiv = document.getElementById('results');
+            const card = document.createElement('div');
+            card.className = 'stream-card';
+            card.innerHTML = `
+                <strong>Tipo detectado: ${type.toUpperCase()}</strong><br>
+                <a href="${link}" target="_blank">${link}</a>
+            `;
+            resultsDiv.appendChild(card);
+        }
+    </script>
+</body>
+</html>
