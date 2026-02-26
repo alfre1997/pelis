@@ -9,7 +9,7 @@
             --bg: #09090b; --card: #18181b; --accent: #8b5cf6;
             --text: #ececec; --border: #27272a; --video: #10b981;
             --ad: #ef4444; --player: #3b82f6; --script: #eab308;
-            --html: #38bdf8; /* Color para los nuevos enlaces HTML */
+            --html: #38bdf8;
         }
 
         * { box-sizing: border-box; }
@@ -22,14 +22,9 @@
         }
 
         .drop-zone {
-            border: 2px dashed var(--accent);
-            padding: 25px;
-            text-align: center;
-            border-radius: 10px;
-            background: rgba(139, 92, 246, 0.05);
-            cursor: pointer;
-            margin-bottom: 15px;
-            transition: 0.3s;
+            border: 2px dashed var(--accent); padding: 25px; text-align: center;
+            border-radius: 10px; background: rgba(139, 92, 246, 0.05);
+            cursor: pointer; margin-bottom: 15px; transition: 0.3s;
         }
         .drop-zone:hover { background: rgba(139, 92, 246, 0.1); }
         input[type="file"] { display: none; }
@@ -46,6 +41,19 @@
         }
         .btn-extract { background: var(--accent); color: white; }
 
+        /* Estilos para botones de Copiar Categoría */
+        .copy-group { 
+            display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 15px; 
+            background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; 
+            border: 1px solid var(--border);
+        }
+        .btn-copy-cat { 
+            flex: 1; min-width: 80px; padding: 6px; font-size: 9px; 
+            border-radius: 4px; border: 1px solid var(--border); 
+            background: #27272a; color: white; cursor: pointer; transition: 0.2s;
+        }
+        .btn-copy-cat:hover { background: var(--accent); }
+
         .stats { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; justify-content: center; }
         .stat-item { padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: bold; border: 1px solid var(--border); background: var(--card); }
 
@@ -60,7 +68,7 @@
         .tag-ad { background: rgba(239, 68, 68, 0.2); color: var(--ad); }
         .tag-player { background: rgba(59, 130, 246, 0.2); color: var(--player); }
         .tag-js { background: rgba(234, 179, 8, 0.2); color: var(--script); }
-        .tag-html { background: rgba(56, 189, 248, 0.2); color: var(--html); } /* Estilo nuevo */
+        .tag-html { background: rgba(56, 189, 248, 0.2); color: var(--html); }
 
         .copy-btn { background: #3f3f46; color: white; padding: 4px; border-radius: 4px; cursor: pointer; border: none; font-size: 9px; }
     </style>
@@ -72,7 +80,17 @@
     <label class="drop-zone" id="dropArea"> <span id="labelTxt">📁 Arrastra el código fuente o clic aquí</span> <input type="file" id="fileInput" accept=".html,.txt,.xml,.js"> </label> <textarea id="sourceInput" placeholder="O pega el código directamente aquí..."></textarea>
     <button class="btn btn-extract" onclick="runCrawl()">Analizar y Clasificar Todo</button>
    </div>
+
    <div id="statsArea" class="stats"></div>
+
+   <div class="copy-group" id="copyGroup" style="display:none;">
+       <button class="btn-copy-cat" onclick="copyAllByType('m3u')">📋 M3U8</button>
+       <button class="btn-copy-cat" onclick="copyAllByType('video')">📋 Videos</button>
+       <button class="btn-copy-cat" onclick="copyAllByType('html')">📋 HTML</button>
+       <button class="btn-copy-cat" onclick="copyAllByType('ad')">📋 Ads</button>
+       <button class="btn-copy-cat" onclick="copyAllByType('script')">📋 Scripts</button>
+   </div>
+
    <div class="table-wrapper">
     <table>
      <thead>
@@ -86,9 +104,11 @@
     </table>
    </div>
   </div>
+
   <script>
     const fileInput = document.getElementById('fileInput');
     const labelTxt = document.getElementById('labelTxt');
+    let globalResults = []; // Almacena los resultados para poder copiarlos
 
     fileInput.onchange = e => {
         if(e.target.files[0]) labelTxt.innerText = "📄 " + e.target.files[0].name;
@@ -107,12 +127,15 @@
 
         const resultsBody = document.getElementById('resultsBody');
         resultsBody.innerHTML = "";
+        globalResults = []; // Limpiar resultados anteriores
         const c = { m3u: 0, video: 0, player: 0, ad: 0, script: 0, html: 0, other: 0 };
 
         uniqueLinks.forEach(link => {
             const clean = link.split(/[\\"']/)[0];
             const info = categorize(clean);
             c[info.key]++;
+
+            globalResults.push({ url: clean, key: info.key });
 
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -123,6 +146,7 @@
             resultsBody.appendChild(row);
         });
 
+        document.getElementById('copyGroup').style.display = "flex";
         updateStats(c);
     }
 
@@ -133,15 +157,16 @@
         if (l.includes('.m3u8') || l.includes('master.m3u8') || l.includes('.mpd')) 
             return { label: 'STREAMING', class: 'tag-m3u', key: 'm3u' };
             
-        // 2. Archivos de Video Directos
-        if (l.match(/\.(mp4|mkv|webm|ts)/)) 
+        // 2. Videos (Detección ampliada de formatos)
+        // Incluye: mp4, mkv, webm, ts, avi, mov, wmv, flv, ogv, m4v, 3gp, mpeg, mpg
+        if (l.match(/\.(mp4|mkv|webm|ts|avi|mov|wmv|flv|ogv|m4v|3gp|mpeg|mpg)/)) 
             return { label: 'VIDEO', class: 'tag-video', key: 'video' };
             
-        // 3. NUEVO: Archivos HTML / HTM
+        // 3. HTML / HTM
         if (l.includes('.html') || l.includes('.htm')) 
             return { label: 'HTML', class: 'tag-html', key: 'html' };
 
-        // 4. Reproductores y Scripts conocidos
+        // 4. Reproductores
         if (l.includes('player') || l.includes('vjs') || l.includes('jwplayer')) 
             return { label: 'PLAYER', class: 'tag-player', key: 'player' };
             
@@ -164,6 +189,22 @@
             <span class="stat-item">📢 Ads: ${c.ad}</span>
             <span class="stat-item">⚙️ JS: ${c.script}</span>
         `;
+    }
+
+    // Función para copiar todos los enlaces de una misma categoría
+    function copyAllByType(type) {
+        const filtered = globalResults
+            .filter(item => item.key === type)
+            .map(item => item.url)
+            .join('\n');
+
+        if (filtered) {
+            navigator.clipboard.writeText(filtered).then(() => {
+                alert("Copiados " + filtered.split('\n').length + " enlaces de tipo " + type.toUpperCase());
+            });
+        } else {
+            alert("No hay enlaces de este tipo para copiar.");
+        }
     }
 </script>
  </body>
