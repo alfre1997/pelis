@@ -3,61 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stream Sniper | Proxy Edition</title>
+    <title>Stream Sniper | File & Source Extractor</title>
     <style>
         :root {
-            --bg: #0b0e14;
+            --bg: #0d1117;
             --card: #161b22;
-            --accent: #238636; /* Verde tipo GitHub */
-            --danger: #da3633;
+            --accent: #58a6ff;
+            --success: #238636;
+            --border: #30363d;
             --text: #c9d1d9;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            font-family: 'Segoe UI', system-ui, sans-serif;
             background-color: var(--bg);
             color: var(--text);
+            margin: 0;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 20px;
         }
 
-        .container { width: 100%; max-width: 800px; }
+        .container { width: 100%; max-width: 900px; }
 
         .panel {
             background: var(--card);
+            border: 1px solid var(--border);
             padding: 25px;
-            border-radius: 8px;
-            border: 1px solid #30363d;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-        }
-
-        .alert-box {
-            background: rgba(218, 54, 51, 0.1);
-            border: 1px solid var(--danger);
-            color: #ff7b72;
-            padding: 15px;
-            border-radius: 6px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             margin-bottom: 20px;
-            font-size: 0.9em;
         }
 
-        .alert-box a { color: #58a6ff; font-weight: bold; }
+        h2 { margin-top: 0; color: var(--accent); display: flex; align-items: center; gap: 10px; }
 
-        .input-group { display: flex; gap: 10px; margin-top: 15px; }
-
-        input {
-            flex: 1;
-            padding: 10px;
+        /* Zona de carga de archivos */
+        .file-drop-zone {
+            border: 2px dashed var(--border);
+            padding: 30px;
+            text-align: center;
+            border-radius: 10px;
             background: #0d1117;
-            border: 1px solid #30363d;
-            color: white;
-            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-bottom: 20px;
         }
 
-        button {
-            padding: 10px 20px;
+        .file-drop-zone:hover { border-color: var(--accent); background: #1c2128; }
+        
+        input[type="file"] { display: none; }
+
+        .btn {
+            padding: 12px 20px;
             border-radius: 6px;
             border: none;
             cursor: pointer;
@@ -65,124 +63,140 @@
             transition: 0.2s;
         }
 
-        .btn-proxy { background: var(--accent); color: white; }
-        .btn-proxy:hover { background: #2ea043; }
-
-        #results { margin-top: 25px; }
-
-        .link-item {
-            background: #0d1117;
-            padding: 12px;
-            border: 1px solid #30363d;
-            margin-bottom: 8px;
+        .btn-import { background: var(--success); color: white; width: 100%; font-size: 1rem; }
+        
+        textarea {
+            width: 100%;
+            height: 100px;
+            background: #000;
+            color: #8b949e;
+            border: 1px solid var(--border);
             border-radius: 6px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            padding: 10px;
+            font-family: monospace;
+            margin-top: 10px;
+            box-sizing: border-box;
         }
 
-        .link-item a { color: #58a6ff; text-decoration: none; font-size: 0.85em; word-break: break-all; margin-right: 10px; }
+        /* Tabla de resultados mejorada */
+        .results-container {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            display: none;
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #21262d; padding: 12px; text-align: left; border-bottom: 2px solid var(--border); }
+        td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+
+        .link-url { color: #58a6ff; text-decoration: none; word-break: break-all; }
+        .tag { background: #30363d; padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; color: #8b949e; }
+        
+        .copy-btn { background: #30363d; color: white; padding: 5px 10px; font-size: 0.7rem; border-radius: 4px; }
+        .copy-btn:active { background: var(--accent); }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="panel">
-        <h2 style="margin-top:0;">🎯 Extractor con Proxy</h2>
+        <h2>📂 Importar Código Fuente</h2>
+        <p style="font-size: 0.9em; color: #8b949e;">Usa el bookmarklet para descargar el archivo de la página y suéltalo aquí:</p>
         
-        <div class="alert-box">
-            <strong>⚠️ PASO OBLIGATORIO:</strong> 
-            Para que este extractor funcione, primero debes activar el acceso temporal al proxy haciendo clic aquí: 
-            <br><br>
-            <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank">👉 ACTIVAR PROXY AQUÍ</a>
-            <br><br>
-            <em>(Si no haces clic y presionas el botón azul en esa página, GitHub no podrá leer los enlaces).</em>
-        </div>
+        <label class="file-drop-zone" id="dropZone">
+            <span id="fileLabel">📁 Arrastra el archivo .html o haz clic para buscar</span>
+            <input type="file" id="fileInput" accept=".html,.txt,.php">
+        </label>
 
-        <div class="input-group">
-            <input type="text" id="targetUrl" placeholder="https://cuevana.io/pelicula/ejemplo">
-            <button class="btn-proxy" onclick="extractWithProxy()">Extraer con Proxy</button>
-        </div>
+        <p style="text-align:center; font-size: 0.8em;">O pega el código directamente aquí:</p>
+        <textarea id="rawHtml" placeholder="<html>...</html>"></textarea>
+        
+        <button class="btn btn-import" style="margin-top:15px;" onclick="processData()">EJECUTAR EXTRACCIÓN MAESTRA</button>
     </div>
 
-    <div id="results"></div>
+    <div class="results-container" id="resultsWrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Tipo</th>
+                    <th>Enlace Detectado</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody id="resultsBody"></tbody>
+        </table>
+    </div>
 </div>
 
 <script>
-    async function extractWithProxy() {
-        const url = document.getElementById('targetUrl').value;
-        const resultsDiv = document.getElementById('results');
-        
-        if (!url) return alert("Ingresa una URL");
+    const fileInput = document.getElementById('fileInput');
+    const dropZone = document.getElementById('dropZone');
+    const fileLabel = document.getElementById('fileLabel');
 
-        resultsDiv.innerHTML = "<p>Conectando a través del servidor proxy...</p>";
+    // Manejo de archivos
+    fileInput.onchange = e => {
+        const file = e.target.files[0];
+        if(file) fileLabel.innerText = "Archivo cargado: " + file.name;
+    };
 
-        // Configuración del Proxy de Heroku (CORS Anywhere)
-        const proxyUrl = "https://cors-anywhere.herokuapp.com/";
-        
-        try {
-            const response = await fetch(proxyUrl + url, {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            });
+    async function processData() {
+        let content = document.getElementById('rawHtml').value;
+        const file = fileInput.files[0];
 
-            if (response.status === 403) {
-                throw new Error("Proxy no activado");
-            }
-
-            const html = await response.text();
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            
-            // Buscador de patrones de video/streaming
-            const linksFound = [];
-            const elements = doc.querySelectorAll('iframe, source, video, a');
-            
-            elements.forEach(el => {
-                const src = el.src || el.href;
-                if (src && src.startsWith('http')) {
-                    // Filtrar solo cosas interesantes (reproductores, archivos de video)
-                    if (src.includes('embed') || src.includes('player') || src.includes('.m3u8') || src.includes('storage')) {
-                        linksFound.push(src);
-                    }
-                }
-            });
-
-            renderResults([...new Set(linksFound)]);
-
-        } catch (error) {
-            let msg = "Error de conexión.";
-            if (error.message === "Proxy no activado") {
-                msg = "Debes activar el proxy en el enlace de arriba (botón azul en la otra pestaña).";
-            }
-            resultsDiv.innerHTML = `<p style="color:var(--danger)">${msg}</p>`;
+        if (file) {
+            content = await file.text();
         }
+
+        if (!content) return alert("Por favor, sube un archivo o pega el código fuente.");
+
+        extractLinks(content);
     }
 
-    function renderResults(links) {
-        const resultsDiv = document.getElementById('results');
-        resultsDiv.innerHTML = `<h3>Resultados (${links.length}):</h3>`;
+    function extractLinks(html) {
+        const resultsBody = document.getElementById('resultsBody');
+        const wrapper = document.getElementById('resultsWrapper');
+        resultsBody.innerHTML = "";
+        
+        const patterns = [
+            { name: 'STREAM (m3u8)', reg: /https?:\/\/[^"']+\.m3u8[^"']*/g },
+            { name: 'VIDEO (mp4)', reg: /https?:\/\/[^"']+\.mp4[^"']*/g },
+            { name: 'REPRODUCTOR', reg: /https?:\/\/[^"']+(?:embed|player|video|v|iframe)\/[^"']+/g },
+            { name: 'SERVIDORES', reg: /https?:\/\/(?:fembed|upstream|voe|dood|mixdrop|streamtape)[^"']+/g }
+        ];
 
-        if (links.length === 0) {
-            resultsDiv.innerHTML += "<p>No se encontraron enlaces visibles. El sitio podría estar usando JavaScript para ocultarlos.</p>";
-            return;
-        }
+        let found = [];
 
-        links.forEach(link => {
-            const item = document.createElement('div');
-            item.className = 'link-item';
-            item.innerHTML = `
-                <a href="${link}" target="_blank">${link}</a>
-                <button onclick="copyToClipboard('${link}')" style="background:#30363d; color:white; font-size:10px;">Copiar</button>
-            `;
-            resultsDiv.appendChild(item);
+        patterns.forEach(p => {
+            const matches = html.match(p.reg);
+            if (matches) {
+                [...new Set(matches)].forEach(link => {
+                    found.push({ type: p.name, url: link });
+                });
+            }
         });
+
+        if (found.length > 0) {
+            wrapper.style.display = 'block';
+            found.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><span class="tag">${item.type}</span></td>
+                    <td><a href="${item.url}" target="_blank" class="link-url">${item.url}</a></td>
+                    <td><button class="btn copy-btn" onclick="copy('${item.url}')">Copiar</button></td>
+                `;
+                resultsBody.appendChild(row);
+            });
+            window.scrollTo({ top: wrapper.offsetTop, behavior: 'smooth' });
+        } else {
+            alert("No se encontraron links de video. Asegúrate de que el código fuente sea el correcto.");
+        }
     }
 
-    function copyToClipboard(text) {
+    function copy(text) {
         navigator.clipboard.writeText(text);
-        alert("Enlace copiado");
+        // Notificación simple
     }
 </script>
 
