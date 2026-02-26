@@ -2,203 +2,67 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stream Sniper | File & Source Extractor</title>
+    <title>Stream Sniper v3 | VAST & XML Decoder</title>
     <style>
-        :root {
-            --bg: #0d1117;
-            --card: #161b22;
-            --accent: #58a6ff;
-            --success: #238636;
-            --border: #30363d;
-            --text: #c9d1d9;
-        }
-
-        body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .container { width: 100%; max-width: 900px; }
-
-        .panel {
-            background: var(--card);
-            border: 1px solid var(--border);
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            margin-bottom: 20px;
-        }
-
-        h2 { margin-top: 0; color: var(--accent); display: flex; align-items: center; gap: 10px; }
-
-        /* Zona de carga de archivos */
-        .file-drop-zone {
-            border: 2px dashed var(--border);
-            padding: 30px;
-            text-align: center;
-            border-radius: 10px;
-            background: #0d1117;
-            cursor: pointer;
-            transition: 0.3s;
-            margin-bottom: 20px;
-        }
-
-        .file-drop-zone:hover { border-color: var(--accent); background: #1c2128; }
-        
-        input[type="file"] { display: none; }
-
-        .btn {
-            padding: 12px 20px;
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-            transition: 0.2s;
-        }
-
-        .btn-import { background: var(--success); color: white; width: 100%; font-size: 1rem; }
-        
-        textarea {
-            width: 100%;
-            height: 100px;
-            background: #000;
-            color: #8b949e;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 10px;
-            font-family: monospace;
-            margin-top: 10px;
-            box-sizing: border-box;
-        }
-
-        /* Tabla de resultados mejorada */
-        .results-container {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            overflow: hidden;
-            display: none;
-        }
-
-        table { width: 100%; border-collapse: collapse; }
-        th { background: #21262d; padding: 12px; text-align: left; border-bottom: 2px solid var(--border); }
-        td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
-
-        .link-url { color: #58a6ff; text-decoration: none; word-break: break-all; }
-        .tag { background: #30363d; padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; color: #8b949e; }
-        
-        .copy-btn { background: #30363d; color: white; padding: 5px 10px; font-size: 0.7rem; border-radius: 4px; }
-        .copy-btn:active { background: var(--accent); }
+        :root { --bg: #0d1117; --accent: #8b5cf6; --text: #c9d1d9; }
+        body { font-family: sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
+        .container { max-width: 1000px; margin: auto; }
+        textarea { width: 100%; height: 150px; background: #000; color: #10b981; border: 1px solid #30363d; border-radius: 8px; padding: 10px; font-family: monospace; }
+        .btn { background: var(--accent); color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 10px; }
+        .result-card { background: #161b22; border: 1px solid #30363d; padding: 15px; margin-top: 10px; border-radius: 8px; }
+        .ad-warning { color: #f87171; font-size: 0.8rem; font-weight: bold; }
+        .video-link { color: #58a6ff; word-break: break-all; text-decoration: none; display: block; margin: 10px 0; }
+        .tag { background: #30363d; padding: 3px 7px; border-radius: 4px; font-size: 0.7rem; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="panel">
-        <h2>📂 Importar Código Fuente</h2>
-        <p style="font-size: 0.9em; color: #8b949e;">Usa el bookmarklet para descargar el archivo de la página y suéltalo aquí:</p>
-        
-        <label class="file-drop-zone" id="dropZone">
-            <span id="fileLabel">📁 Arrastra el archivo .html o haz clic para buscar</span>
-            <input type="file" id="fileInput" accept=".html,.txt,.php">
-        </label>
+    <h2>🎯 Decodificador de XML / VAST / Código Fuente</h2>
+    <p>Pega aquí el contenido del XML que abriste en el navegador:</p>
+    <textarea id="inputData" placeholder="Pega el <VAST>...</VAST> o cualquier código aquí..."></textarea>
+    <button class="btn" onclick="analyze()">ANALIZAR CONTENIDO</button>
 
-        <p style="text-align:center; font-size: 0.8em;">O pega el código directamente aquí:</p>
-        <textarea id="rawHtml" placeholder="<html>...</html>"></textarea>
-        
-        <button class="btn btn-import" style="margin-top:15px;" onclick="processData()">EJECUTAR EXTRACCIÓN MAESTRA</button>
-    </div>
-
-    <div class="results-container" id="resultsWrapper">
-        <table>
-            <thead>
-                <tr>
-                    <th>Tipo</th>
-                    <th>Enlace Detectado</th>
-                    <th>Acción</th>
-                </tr>
-            </thead>
-            <tbody id="resultsBody"></tbody>
-        </table>
-    </div>
+    <div id="results"></div>
 </div>
 
 <script>
-    const fileInput = document.getElementById('fileInput');
-    const dropZone = document.getElementById('dropZone');
-    const fileLabel = document.getElementById('fileLabel');
+    function analyze() {
+        const data = document.getElementById('inputData').value;
+        const resultsDiv = document.getElementById('results');
+        resultsDiv.innerHTML = "<h3>Resultados encontrados:</h3>";
 
-    // Manejo de archivos
-    fileInput.onchange = e => {
-        const file = e.target.files[0];
-        if(file) fileLabel.innerText = "Archivo cargado: " + file.name;
-    };
+        // Regex para buscar enlaces dentro de CDATA y comillas
+        const linkRegex = /(?:<!\[CDATA\[\s*|["'])(https?:\/\/[^\]"'\s>]+)(?:\s*\]\]>|["'])/g;
+        let match;
+        const found = new Set();
 
-    async function processData() {
-        let content = document.getElementById('rawHtml').value;
-        const file = fileInput.files[0];
-
-        if (file) {
-            content = await file.text();
+        while ((match = linkRegex.exec(data)) !== null) {
+            found.add(match[1].trim());
         }
 
-        if (!content) return alert("Por favor, sube un archivo o pega el código fuente.");
+        if (found.size === 0) {
+            resultsDiv.innerHTML += "<p>No se encontraron enlaces de video válidos.</p>";
+            return;
+        }
 
-        extractLinks(content);
-    }
+        found.forEach(link => {
+            const isAd = link.toLowerCase().includes('ad') || link.toLowerCase().includes('betwinner') || link.toLowerCase().includes('tracking');
+            const isVideo = link.includes('.mp4') || link.includes('.m3u8') || link.includes('.ts');
 
-    function extractLinks(html) {
-        const resultsBody = document.getElementById('resultsBody');
-        const wrapper = document.getElementById('resultsWrapper');
-        resultsBody.innerHTML = "";
-        
-        const patterns = [
-            { name: 'STREAM (m3u8)', reg: /https?:\/\/[^"']+\.m3u8[^"']*/g },
-            { name: 'VIDEO (mp4)', reg: /https?:\/\/[^"']+\.mp4[^"']*/g },
-            { name: 'REPRODUCTOR', reg: /https?:\/\/[^"']+(?:embed|player|video|v|iframe)\/[^"']+/g },
-            { name: 'SERVIDORES', reg: /https?:\/\/(?:fembed|upstream|voe|dood|mixdrop|streamtape)[^"']+/g }
-        ];
-
-        let found = [];
-
-        patterns.forEach(p => {
-            const matches = html.match(p.reg);
-            if (matches) {
-                [...new Set(matches)].forEach(link => {
-                    found.push({ type: p.name, url: link });
-                });
+            if (isVideo) {
+                const card = document.createElement('div');
+                card.className = 'result-card';
+                card.innerHTML = `
+                    <span class="tag">${isVideo ? 'ARCHIVO DE VIDEO' : 'LINK'}</span>
+                    ${isAd ? '<span class="ad-warning">⚠️ POSIBLE ANUNCIO</span>' : ''}
+                    <a href="${link}" target="_blank" class="video-link">${link}</a>
+                    <button onclick="navigator.clipboard.writeText('${link}'); alert('Copiado')">Copiar Link</button>
+                `;
+                resultsDiv.appendChild(card);
             }
         });
-
-        if (found.length > 0) {
-            wrapper.style.display = 'block';
-            found.forEach(item => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td><span class="tag">${item.type}</span></td>
-                    <td><a href="${item.url}" target="_blank" class="link-url">${item.url}</a></td>
-                    <td><button class="btn copy-btn" onclick="copy('${item.url}')">Copiar</button></td>
-                `;
-                resultsBody.appendChild(row);
-            });
-            window.scrollTo({ top: wrapper.offsetTop, behavior: 'smooth' });
-        } else {
-            alert("No se encontraron links de video. Asegúrate de que el código fuente sea el correcto.");
-        }
-    }
-
-    function copy(text) {
-        navigator.clipboard.writeText(text);
-        // Notificación simple
     }
 </script>
-
 </body>
 </html>
