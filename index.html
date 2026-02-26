@@ -1,213 +1,170 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Stream Sniper v4 | Responsive Edition</title>
-    <style>
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stream Sniper v5 | Deep Crawler &amp; File Import</title>
+  <style>
         :root {
-            --bg: #0d1117;
-            --card: #161b22;
-            --accent: #8b5cf6;
-            --text: #c9d1d9;
-            --border: #30363d;
-            --danger: #f87171;
-            --success: #10b981;
+            --bg: #09090b; --card: #18181b; --accent: #8b5cf6;
+            --text: #ececec; --border: #27272a; --video: #10b981;
+            --ad: #ef4444; --player: #3b82f6; --script: #eab308;
+            --html: #38bdf8; /* Color para los nuevos enlaces HTML */
         }
 
-        /* Ajustes globales para evitar desbordamiento */
         * { box-sizing: border-box; }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
-            padding: 10px; /* Menos margen en móviles */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); padding: 10px; margin: 0; }
+        .container { width: 100%; max-width: 1000px; margin: auto; }
+        
+        .panel { 
+            background: var(--card); border: 1px solid var(--border); 
+            padding: 20px; border-radius: 12px; margin-bottom: 15px;
         }
 
-        .container {
-            width: 100%;
-            max-width: 800px; /* Ancho máximo para PC */
-            margin: 0 auto;
-        }
-
-        .panel {
-            background: var(--card);
-            border: 1px solid var(--border);
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            margin-bottom: 15px;
-        }
-
-        h2 { 
-            font-size: 1.2rem; 
-            color: var(--accent); 
-            margin-top: 0;
+        .drop-zone {
+            border: 2px dashed var(--accent);
+            padding: 25px;
             text-align: center;
-        }
-
-        /* Ajuste de inputs y textareas para que no se salgan */
-        textarea, input {
-            width: 100%;
-            background: #000;
-            color: #10b981;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 12px;
-            font-family: monospace;
-            font-size: 14px;
-            margin-top: 5px;
-        }
-
-        textarea { height: 120px; resize: vertical; }
-
-        .btn {
-            width: 100%;
-            padding: 12px;
-            border-radius: 8px;
-            border: none;
+            border-radius: 10px;
+            background: rgba(139, 92, 246, 0.05);
             cursor: pointer;
-            font-weight: bold;
-            margin-top: 10px;
-            transition: 0.2s;
-            text-transform: uppercase;
-            font-size: 0.9rem;
+            margin-bottom: 15px;
+            transition: 0.3s;
+        }
+        .drop-zone:hover { background: rgba(139, 92, 246, 0.1); }
+        input[type="file"] { display: none; }
+
+        textarea { 
+            width: 100%; height: 120px; background: #000; color: #10b981; 
+            border: 1px solid var(--border); border-radius: 8px; padding: 12px;
+            font-family: monospace; font-size: 13px; margin-top: 10px;
         }
 
-        .btn-main { background: var(--accent); color: white; }
-        .btn-file { background: #30363d; color: white; border: 1px dashed var(--accent); }
-
-        /* Tarjetas de resultados adaptables */
-        .result-card {
-            background: #0d1117;
-            border: 1px solid var(--border);
-            padding: 12px;
-            margin-top: 10px;
-            border-radius: 8px;
-            word-break: break-all; /* Rompe links largos para que no ensanchen la pantalla */
+        .btn { 
+            width: 100%; padding: 14px; border-radius: 8px; border: none; 
+            font-weight: bold; cursor: pointer; text-transform: uppercase; margin-top: 10px;
         }
+        .btn-extract { background: var(--accent); color: white; }
 
-        .video-link {
-            color: #58a6ff;
-            text-decoration: none;
-            display: block;
-            margin: 8px 0;
-            font-size: 0.85rem;
-            line-height: 1.4;
-        }
+        .stats { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; justify-content: center; }
+        .stat-item { padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: bold; border: 1px solid var(--border); background: var(--card); }
 
-        .tag {
-            font-size: 0.65rem;
-            padding: 2px 6px;
-            border-radius: 4px;
-            background: #30363d;
-            font-weight: bold;
-        }
+        .table-wrapper { background: var(--card); border: 1px solid var(--border); border-radius: 8px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        th { background: #27272a; padding: 10px; text-align: left; }
+        td { padding: 8px; border-bottom: 1px solid var(--border); word-break: break-all; }
 
-        .ad-label { color: var(--danger); }
-        .movie-label { color: var(--success); }
+        .tag { padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; white-space: nowrap; display: inline-block; margin-bottom: 4px; }
+        .tag-video { background: rgba(16, 185, 129, 0.2); color: var(--video); }
+        .tag-m3u { background: rgba(139, 92, 246, 0.2); color: var(--accent); }
+        .tag-ad { background: rgba(239, 68, 68, 0.2); color: var(--ad); }
+        .tag-player { background: rgba(59, 130, 246, 0.2); color: var(--player); }
+        .tag-js { background: rgba(234, 179, 8, 0.2); color: var(--script); }
+        .tag-html { background: rgba(56, 189, 248, 0.2); color: var(--html); } /* Estilo nuevo */
 
-        /* Ocultar input de archivo real */
-        #fileInput { display: none; }
-
-        @media (max-width: 480px) {
-            h2 { font-size: 1rem; }
-            .btn { font-size: 0.8rem; }
-        }
+        .copy-btn { background: #3f3f46; color: white; padding: 4px; border-radius: 4px; cursor: pointer; border: none; font-size: 9px; }
     </style>
-</head>
-<body>
-
-<div class="container">
-    <div class="panel">
-        <h2>🎯 Extractor Adaptable</h2>
-        
-        <label for="fileInput" class="btn btn-file" style="display: block; text-align: center;">
-            📁 Cargar Fuente (.html / .txt)
-        </label>
-        <input type="file" id="fileInput" accept=".html,.txt">
-        <div id="fileName" style="text-align:center; font-size:12px; margin-top:5px; color:#8b949e;"></div>
-
-        <p style="text-align:center; font-size:0.8rem; margin:15px 0 5px 0;">O pega el código fuente/XML aquí:</p>
-        <textarea id="inputData" placeholder="<html>...</html>"></textarea>
-        
-        <button class="btn btn-main" onclick="startAnalysis()">Extraer Links de Video</button>
-    </div>
-
-    <div id="results"></div>
-</div>
-
-<script>
+ </head>
+ <body>
+  <div class="container">
+   <div class="panel">
+    <h2 style="margin:0 0 15px 0; font-size: 1.1rem; text-align: center; color: var(--accent);">🔍 CRAWLER MAESTRO</h2>
+    <label class="drop-zone" id="dropArea"> <span id="labelTxt">📁 Arrastra el código fuente o clic aquí</span> <input type="file" id="fileInput" accept=".html,.txt,.xml,.js"> </label> <textarea id="sourceInput" placeholder="O pega el código directamente aquí..."></textarea>
+    <button class="btn btn-extract" onclick="runCrawl()">Analizar y Clasificar Todo</button>
+   </div>
+   <div id="statsArea" class="stats"></div>
+   <div class="table-wrapper">
+    <table>
+     <thead>
+      <tr>
+       <th width="20%">TIPO</th>
+       <th width="70%">ENLACE</th>
+       <th width="10%">MÁS</th>
+      </tr>
+     </thead>
+     <tbody id="resultsBody"></tbody>
+    </table>
+   </div>
+  </div>
+  <script>
     const fileInput = document.getElementById('fileInput');
-    const fileName = document.getElementById('fileName');
+    const labelTxt = document.getElementById('labelTxt');
 
-    fileInput.onchange = () => {
-        if(fileInput.files.length > 0) fileName.innerText = "Seleccionado: " + fileInput.files[0].name;
+    fileInput.onchange = e => {
+        if(e.target.files[0]) labelTxt.innerText = "📄 " + e.target.files[0].name;
     };
 
-    async function startAnalysis() {
-        let data = document.getElementById('inputData').value;
+    async function runCrawl() {
+        let content = document.getElementById('sourceInput').value;
         const file = fileInput.files[0];
 
-        if (file) {
-            data = await file.text();
-        }
+        if (file) content = await file.text();
+        if (!content) return alert("Sube un archivo o pega el código.");
 
-        if (!data) return alert("Sube un archivo o pega el código.");
+        const urlRegex = /(https?:\/\/[^\s"'<>\]]+)/g;
+        const matches = content.match(urlRegex) || [];
+        const uniqueLinks = [...new Set(matches)];
 
-        const resultsDiv = document.getElementById('results');
-        resultsDiv.innerHTML = "<h3>Resultados:</h3>";
+        const resultsBody = document.getElementById('resultsBody');
+        resultsBody.innerHTML = "";
+        const c = { m3u: 0, video: 0, player: 0, ad: 0, script: 0, html: 0, other: 0 };
 
-        // Regex mejorada para capturar enlaces en XML (CDATA) y HTML
-        const regex = /(?:<!\[CDATA\[\s*|["'])(https?:\/\/[^\]"'\s>]+)(?:\s*\]\]>|["'])/g;
-        let match;
-        const found = new Set();
+        uniqueLinks.forEach(link => {
+            const clean = link.split(/[\\"']/)[0];
+            const info = categorize(clean);
+            c[info.key]++;
 
-        while ((match = regex.exec(data)) !== null) {
-            found.add(match[1].trim());
-        }
-
-        if (found.size === 0) {
-            resultsDiv.innerHTML += "<p>No se encontró nada.</p>";
-            return;
-        }
-
-        found.forEach(link => {
-            // Solo procesar si parece video o streaming
-            const isVideo = link.match(/\.(mp4|m3u8|mkv|ts|xml)/i) || link.includes('embed') || link.includes('player');
-            
-            if (isVideo) {
-                const isAd = link.toLowerCase().match(/(betwinner|adangle|ads|tracking|pixel|spix|agl003)/);
-                
-                const card = document.createElement('div');
-                card.className = 'result-card';
-                card.style.opacity = isAd ? '0.6' : '1';
-                
-                card.innerHTML = `
-                    <div>
-                        <span class="tag ${isAd ? 'ad-label' : 'movie-label'}">
-                            ${isAd ? '🚫 ANUNCIO' : '🎬 CONTENIDO'}
-                        </span>
-                    </div>
-                    <a href="${link}" target="_blank" class="video-link">${link}</a>
-                    <button class="btn" style="margin-top:5px; padding:5px; font-size:11px; background:#21262d; color:white; border:1px solid #30363d;" 
-                            onclick="copyToClipboard('${link}')">Copiar Link</button>
-                `;
-                resultsDiv.appendChild(card);
-            }
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><span class="tag ${info.class}">${info.label}</span></td>
+                <td><a href="${clean}" target="_blank" style="color:#38bdf8; text-decoration:none;">${clean}</a></td>
+                <td><button class="copy-btn" onclick="navigator.clipboard.writeText('${clean}');alert('Copiado')">CLIP</button></td>
+            `;
+            resultsBody.appendChild(row);
         });
+
+        updateStats(c);
     }
 
-    function copyToClipboard(text) {
-        navigator.clipboard.writeText(text);
-        alert("Enlace copiado al portapapeles");
+    function categorize(u) {
+        const l = u.toLowerCase();
+        
+        // 1. Streaming (M3U8 / MPD)
+        if (l.includes('.m3u8') || l.includes('master.m3u8') || l.includes('.mpd')) 
+            return { label: 'STREAMING', class: 'tag-m3u', key: 'm3u' };
+            
+        // 2. Archivos de Video Directos
+        if (l.match(/\.(mp4|mkv|webm|ts)/)) 
+            return { label: 'VIDEO', class: 'tag-video', key: 'video' };
+            
+        // 3. NUEVO: Archivos HTML / HTM
+        if (l.includes('.html') || l.includes('.htm')) 
+            return { label: 'HTML', class: 'tag-html', key: 'html' };
+
+        // 4. Reproductores y Scripts conocidos
+        if (l.includes('player') || l.includes('vjs') || l.includes('jwplayer')) 
+            return { label: 'PLAYER', class: 'tag-player', key: 'player' };
+            
+        // 5. Publicidad y Trackers
+        if (l.match(/(betwinner|adangle|ads|vast|tracking|pixel|agl003|spix)/)) 
+            return { label: 'AD/TRACKER', class: 'tag-ad', key: 'ad' };
+            
+        // 6. JavaScript
+        if (l.endsWith('.js') || l.includes('.min.js')) 
+            return { label: 'JS SCRIPT', class: 'tag-js', key: 'script' };
+            
+        return { label: 'ENLACE', class: '', key: 'other' };
+    }
+
+    function updateStats(c) {
+        document.getElementById('statsArea').innerHTML = `
+            <span class="stat-item">🎬 M3U8: ${c.m3u}</span>
+            <span class="stat-item">🎥 Videos: ${c.video}</span>
+            <span class="stat-item">🌐 HTML: ${c.html}</span>
+            <span class="stat-item">📢 Ads: ${c.ad}</span>
+            <span class="stat-item">⚙️ JS: ${c.script}</span>
+        `;
     }
 </script>
-
-</body>
+ </body>
 </html>
