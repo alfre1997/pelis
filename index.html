@@ -2,67 +2,212 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Stream Sniper v3 | VAST & XML Decoder</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Stream Sniper v4 | Responsive Edition</title>
     <style>
-        :root { --bg: #0d1117; --accent: #8b5cf6; --text: #c9d1d9; }
-        body { font-family: sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
-        .container { max-width: 1000px; margin: auto; }
-        textarea { width: 100%; height: 150px; background: #000; color: #10b981; border: 1px solid #30363d; border-radius: 8px; padding: 10px; font-family: monospace; }
-        .btn { background: var(--accent); color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 10px; }
-        .result-card { background: #161b22; border: 1px solid #30363d; padding: 15px; margin-top: 10px; border-radius: 8px; }
-        .ad-warning { color: #f87171; font-size: 0.8rem; font-weight: bold; }
-        .video-link { color: #58a6ff; word-break: break-all; text-decoration: none; display: block; margin: 10px 0; }
-        .tag { background: #30363d; padding: 3px 7px; border-radius: 4px; font-size: 0.7rem; }
+        :root {
+            --bg: #0d1117;
+            --card: #161b22;
+            --accent: #8b5cf6;
+            --text: #c9d1d9;
+            --border: #30363d;
+            --danger: #f87171;
+            --success: #10b981;
+        }
+
+        /* Ajustes globales para evitar desbordamiento */
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 10px; /* Menos margen en móviles */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px; /* Ancho máximo para PC */
+            margin: 0 auto;
+        }
+
+        .panel {
+            background: var(--card);
+            border: 1px solid var(--border);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            margin-bottom: 15px;
+        }
+
+        h2 { 
+            font-size: 1.2rem; 
+            color: var(--accent); 
+            margin-top: 0;
+            text-align: center;
+        }
+
+        /* Ajuste de inputs y textareas para que no se salgan */
+        textarea, input {
+            width: 100%;
+            background: #000;
+            color: #10b981;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            font-family: monospace;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        textarea { height: 120px; resize: vertical; }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+            transition: 0.2s;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+
+        .btn-main { background: var(--accent); color: white; }
+        .btn-file { background: #30363d; color: white; border: 1px dashed var(--accent); }
+
+        /* Tarjetas de resultados adaptables */
+        .result-card {
+            background: #0d1117;
+            border: 1px solid var(--border);
+            padding: 12px;
+            margin-top: 10px;
+            border-radius: 8px;
+            word-break: break-all; /* Rompe links largos para que no ensanchen la pantalla */
+        }
+
+        .video-link {
+            color: #58a6ff;
+            text-decoration: none;
+            display: block;
+            margin: 8px 0;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        .tag {
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: #30363d;
+            font-weight: bold;
+        }
+
+        .ad-label { color: var(--danger); }
+        .movie-label { color: var(--success); }
+
+        /* Ocultar input de archivo real */
+        #fileInput { display: none; }
+
+        @media (max-width: 480px) {
+            h2 { font-size: 1rem; }
+            .btn { font-size: 0.8rem; }
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>🎯 Decodificador de XML / VAST / Código Fuente</h2>
-    <p>Pega aquí el contenido del XML que abriste en el navegador:</p>
-    <textarea id="inputData" placeholder="Pega el <VAST>...</VAST> o cualquier código aquí..."></textarea>
-    <button class="btn" onclick="analyze()">ANALIZAR CONTENIDO</button>
+    <div class="panel">
+        <h2>🎯 Extractor Adaptable</h2>
+        
+        <label for="fileInput" class="btn btn-file" style="display: block; text-align: center;">
+            📁 Cargar Fuente (.html / .txt)
+        </label>
+        <input type="file" id="fileInput" accept=".html,.txt">
+        <div id="fileName" style="text-align:center; font-size:12px; margin-top:5px; color:#8b949e;"></div>
+
+        <p style="text-align:center; font-size:0.8rem; margin:15px 0 5px 0;">O pega el código fuente/XML aquí:</p>
+        <textarea id="inputData" placeholder="<html>...</html>"></textarea>
+        
+        <button class="btn btn-main" onclick="startAnalysis()">Extraer Links de Video</button>
+    </div>
 
     <div id="results"></div>
 </div>
 
 <script>
-    function analyze() {
-        const data = document.getElementById('inputData').value;
-        const resultsDiv = document.getElementById('results');
-        resultsDiv.innerHTML = "<h3>Resultados encontrados:</h3>";
+    const fileInput = document.getElementById('fileInput');
+    const fileName = document.getElementById('fileName');
 
-        // Regex para buscar enlaces dentro de CDATA y comillas
-        const linkRegex = /(?:<!\[CDATA\[\s*|["'])(https?:\/\/[^\]"'\s>]+)(?:\s*\]\]>|["'])/g;
+    fileInput.onchange = () => {
+        if(fileInput.files.length > 0) fileName.innerText = "Seleccionado: " + fileInput.files[0].name;
+    };
+
+    async function startAnalysis() {
+        let data = document.getElementById('inputData').value;
+        const file = fileInput.files[0];
+
+        if (file) {
+            data = await file.text();
+        }
+
+        if (!data) return alert("Sube un archivo o pega el código.");
+
+        const resultsDiv = document.getElementById('results');
+        resultsDiv.innerHTML = "<h3>Resultados:</h3>";
+
+        // Regex mejorada para capturar enlaces en XML (CDATA) y HTML
+        const regex = /(?:<!\[CDATA\[\s*|["'])(https?:\/\/[^\]"'\s>]+)(?:\s*\]\]>|["'])/g;
         let match;
         const found = new Set();
 
-        while ((match = linkRegex.exec(data)) !== null) {
+        while ((match = regex.exec(data)) !== null) {
             found.add(match[1].trim());
         }
 
         if (found.size === 0) {
-            resultsDiv.innerHTML += "<p>No se encontraron enlaces de video válidos.</p>";
+            resultsDiv.innerHTML += "<p>No se encontró nada.</p>";
             return;
         }
 
         found.forEach(link => {
-            const isAd = link.toLowerCase().includes('ad') || link.toLowerCase().includes('betwinner') || link.toLowerCase().includes('tracking');
-            const isVideo = link.includes('.mp4') || link.includes('.m3u8') || link.includes('.ts');
-
+            // Solo procesar si parece video o streaming
+            const isVideo = link.match(/\.(mp4|m3u8|mkv|ts|xml)/i) || link.includes('embed') || link.includes('player');
+            
             if (isVideo) {
+                const isAd = link.toLowerCase().match(/(betwinner|adangle|ads|tracking|pixel|spix|agl003)/);
+                
                 const card = document.createElement('div');
                 card.className = 'result-card';
+                card.style.opacity = isAd ? '0.6' : '1';
+                
                 card.innerHTML = `
-                    <span class="tag">${isVideo ? 'ARCHIVO DE VIDEO' : 'LINK'}</span>
-                    ${isAd ? '<span class="ad-warning">⚠️ POSIBLE ANUNCIO</span>' : ''}
+                    <div>
+                        <span class="tag ${isAd ? 'ad-label' : 'movie-label'}">
+                            ${isAd ? '🚫 ANUNCIO' : '🎬 CONTENIDO'}
+                        </span>
+                    </div>
                     <a href="${link}" target="_blank" class="video-link">${link}</a>
-                    <button onclick="navigator.clipboard.writeText('${link}'); alert('Copiado')">Copiar Link</button>
+                    <button class="btn" style="margin-top:5px; padding:5px; font-size:11px; background:#21262d; color:white; border:1px solid #30363d;" 
+                            onclick="copyToClipboard('${link}')">Copiar Link</button>
                 `;
                 resultsDiv.appendChild(card);
             }
         });
     }
+
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text);
+        alert("Enlace copiado al portapapeles");
+    }
 </script>
+
 </body>
 </html>
