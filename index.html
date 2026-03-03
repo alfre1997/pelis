@@ -9,7 +9,7 @@
             --bg: #09090b; --card: #18181b; --accent: #8b5cf6;
             --text: #ececec; --border: #27272a; --video: #10b981;
             --ad: #ef4444; --player: #3b82f6; --script: #eab308;
-            --html: #38bdf8;
+            --html: #38bdf8; --all: #f97316;
         }
 
         * { box-sizing: border-box; }
@@ -62,8 +62,9 @@
         .btn-copy-cat { 
             flex: 1; min-width: 80px; padding: 6px; font-size: 9px; 
             border-radius: 4px; border: 1px solid var(--border); 
-            background: #27272a; color: white; cursor: pointer;
+            background: #27272a; color: white; cursor: pointer; font-weight: bold;
         }
+        .btn-copy-all { background: var(--all) !important; color: white !important; }
 
         .stats { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; justify-content: center; }
         .stat-item { padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: bold; border: 1px solid var(--border); background: var(--card); }
@@ -107,6 +108,7 @@
    <div id="statsArea" class="stats"></div>
 
    <div class="copy-group" id="copyGroup" style="display:none;">
+       <button class="btn-copy-cat btn-copy-all" onclick="copyEverything()">📋 COPIAR TODO</button>
        <button class="btn-copy-cat" onclick="copyAllByType('m3u')">📋 M3U8</button>
        <button class="btn-copy-cat" onclick="copyAllByType('video')">📋 Videos</button>
        <button class="btn-copy-cat" onclick="copyAllByType('html')">📋 HTML</button>
@@ -128,7 +130,6 @@
     const sourceInput = document.getElementById('sourceInput');
     let globalResults = [];
 
-    // Al cargar la página, mostrar el historial si existe
     window.onload = () => { renderHistory(); };
 
     fileInput.onchange = e => {
@@ -142,7 +143,6 @@
         if (!contentFromHistory && file) content = await file.text();
         if (!content) return alert("Sube un archivo o pega el código.");
 
-        // Guardar en historial si es una búsqueda nueva
         if (!contentFromHistory) {
             saveToHistory(content);
         }
@@ -172,7 +172,7 @@
         });
 
         document.getElementById('copyGroup').style.display = "flex";
-        updateStats(c);
+        updateStats(c, uniqueLinks.length);
         renderHistory();
     }
 
@@ -187,8 +187,9 @@
         return { label: 'ENLACE', class: '', key: 'other' };
     }
 
-    function updateStats(c) {
+    function updateStats(c, total) {
         document.getElementById('statsArea').innerHTML = `
+            <span class="stat-item" style="background:var(--all); color:white">📊 TOTAL: ${total}</span>
             <span class="stat-item">🎬 M3U8: ${c.m3u}</span>
             <span class="stat-item">🎥 Videos: ${c.video}</span>
             <span class="stat-item">🌐 HTML: ${c.html}</span>
@@ -204,16 +205,24 @@
         }
     }
 
-    // --- FUNCIONES DEL HISTORIAL ---
+    // NUEVA FUNCIÓN: COPIAR TODO SIN IMPORTAR FORMATO
+    function copyEverything() {
+        const allLinks = globalResults.map(item => item.url).join('\n');
+        if (allLinks) {
+            navigator.clipboard.writeText(allLinks).then(() => {
+                alert("¡Se han copiado los " + globalResults.length + " enlaces encontrados!");
+            });
+        } else {
+            alert("No hay enlaces para copiar.");
+        }
+    }
+
     function saveToHistory(text) {
         let history = JSON.parse(localStorage.getItem('crawl_history') || "[]");
         const date = new Date().toLocaleString();
         const snippet = text.substring(0, 30).replace(/</g, "&lt;") + "...";
-        
-        // Guardar solo los últimos 10 para no saturar memoria
         history.unshift({ date, snippet, fullText: text });
         if (history.length > 10) history.pop();
-        
         localStorage.setItem('crawl_history', JSON.stringify(history));
     }
 
@@ -221,12 +230,10 @@
         const history = JSON.parse(localStorage.getItem('crawl_history') || "[]");
         const list = document.getElementById('historyList');
         const section = document.getElementById('historySection');
-
         if (history.length === 0) {
             section.style.display = "none";
             return;
         }
-
         section.style.display = "block";
         list.innerHTML = history.map((item, index) => `
             <div class="history-item">
